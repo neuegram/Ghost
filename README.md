@@ -24,3 +24,6 @@ To whoever at Snapchat came up with this header:
 
 And to whoever at Snapchat came up with this message:
 > We've noticed that you're using a third-party application to access Snapchat, putting yourself (and possibly your friends) at risk. Please change your password and stop using third-party applications when you access Snapchat.
+
+### License
+This project is licensed under the MIT license, see the LICENSE file for more details.
