@@ -3,22 +3,22 @@ A Go library for Snapchat's API
 
 ### Sending a Snap example
 ```go
-	 casperClient := &casper.Casper{
-        APIKey:    "yourapikey",
-        APISecret: "yourapisecret",
-        Username:  "yoursnapchatusername",
-        Password:  "yoursnapchatpassword",
-        Debug:     false,
-    }
-	snapchat := ghost.NewAccount("yourgmailaccount@gmail.com", "yourgmailpassword", casperClient, false)
-	err := snapchat.Login()
-	if err != nil {
-		fmt.Println(err)
-	}
-	snapchat.Updates()
-	mediaID, _ := snapchat.Upload("yoursnap.jpg")
-	result, _ := snapchat.Send(mediaID, []string{"teamsnapchat"}, 10)
-	fmt.Println(result)
+ casperClient := &casper.Casper{
+    APIKey:    "yourapikey",
+    APISecret: "yourapisecret",
+    Username:  "yoursnapchatusername",
+    Password:  "yoursnapchatpassword",
+    Debug:     false,
+}
+snapchat := ghost.NewAccount("yourgmailaccount@gmail.com", "yourgmailpassword", casperClient, false)
+err := snapchat.Login()
+if err != nil {
+	fmt.Println(err)
+}
+snapchat.Updates()
+mediaID, _ := snapchat.Upload("yoursnap.jpg")
+result, _ := snapchat.Send(mediaID, []string{"teamsnapchat"}, 10)
+fmt.Println(result)
 ```
 #### Installation
 `$ go get github.com/hako/ghost`
