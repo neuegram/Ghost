@@ -1,24 +1,56 @@
-# Ghost
+# ghost
 A Go library for Snapchat's API
 
-### Example
+### Sending a Snap example
 ```go
-// Login
-loginResult := Login("myUsername", "myPassword")
-authToken = loginResult["auth_token"].(string)
-// Encrypt
-file, _ := ioutil.ReadFile("filePathIn.jpg")
-encryptedFile := EncryptECB([]byte(BLOB_ENCRYPTION_KEY), file)
-ioutil.WriteFile("filePathOut.jpg", encryptedFile, 0644)
-// Upload
-id := Upload("myUsername", authToken, IMAGE, "ImageECB.jpg")
-SendBlob("myUsername", authToken, id, []string{"recipientUsername"}, 10)
+	 casperClient := &casper.Casper{
+        APIKey:    "yourapikey",
+        APISecret: "yourapisecret",
+        Username:  "yoursnapchatusername",
+        Password:  "yoursnapchatpassword",
+        Debug:     false,
+    }
+	snapchat := ghost.NewAccount("yourgmailaccount@gmail.com", "yourgmailpassword", casperClient, false)
+	err := snapchat.Login()
+	if err != nil {
+		fmt.Println(err)
+	}
+	snapchat.Updates()
+	mediaID, _ := snapchat.Upload("yoursnap.jpg")
+	result, _ := snapchat.Send(mediaID, []string{"teamsnapchat"}, 10)
+	fmt.Println(result)
 ```
+#### Installation
+`$ go get github.com/hako/ghost`
 
-### Status
-Because some parts have needed more work than others, I have yet to test about half of the code. I haven't had enough time to go through all of Snapchat's API changes since I last documented it. If something doesn't work, opening an issue (and email me if you feel the need). More coming, including additions to my Snapchat API [documentation](https://github.com/neuegram/SnAPI) (it needs a lot of updating :grimacing:).
+#### Update
+This library has been updated to keep up with Snapchat's changes. To use this library you need to install the Casper API. 
 
-### Special Thanks :poop:
+There is a Go library of the API [here](https://github.com/hako/casper)
+
+Run `go get github.com/hako/casper` then enter your API keys and you can start using this library.
+
+Not everything has been tested since but the basics still work. But feel free to contribute, this library is actively maintained. :)
+
+You can take a look at the documentation [here](https://github.com/mgp25/SC-API/wiki/API-v2-Research) and [here](https://github.com/cuonic/SnapchatDevWiki/wiki).
+
+#### Snapchat Registration CLI
+You can register a Snapchat account through the CLI.
+
+Run `$ go get github.com/hako/ghost/srcli`
+
+Run `$ srcli -help` for more details.
+
+### Special Thanks
+
+- [mgp25](https://github.com/hako/SC-API)
+- [neuegram](https://github.com/neuegram)
+- [teknogeek](https://github.com/teknogeek)
+- [hako](https://github.com/hako)
+- [liamcottle](https://github.com/liamcottle) (creator of [Casper](https://casper.io/))
+- [kyleboyer](https://github.com/kyleboyer)
+
+### Extra Special Thanks :poop:
 To whoever at Snapchat came up with this header:
 > “X-Snapchat-Notice: Snapchat Private APIs - Unauthorized use is prohibited.”
 
