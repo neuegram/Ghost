@@ -962,7 +962,7 @@ func (acc *Account) Login() error {
 		"ptoken":           "ie",
 		"username":         acc.Username,
 		"timestamp":        ts,
-		"req_token":        req_token,
+		"req_token":        reqToken,
 		"password":         acc.Password,
 	}
 
