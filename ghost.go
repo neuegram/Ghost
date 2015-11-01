@@ -1273,14 +1273,15 @@ func (acc *Account) Send(mediaID string, recipients []string, time int) (map[str
 	if err != nil {
 		return nil, err
 	}
+	timeString := strconv.Itoa(int(time))
 	data := map[string]string{
 		"username":            acc.Username,
 		"timestamp":           ts,
 		"req_token":           RequestToken(acc.Token, ts),
 		"media_id":            mediaID,
 		"recipients":          string(rp),
-		"reply":               "1",
-		"time":                "5",
+		"reply":               "0",
+		"time":                timeString,
 		"country_code":        "US",
 		"camera_front_facing": "0",
 		"zipped":              "0",
@@ -1302,36 +1303,48 @@ func (acc *Account) Send(mediaID string, recipients []string, time int) (map[str
 	return parsed, nil
 }
 
-// RetryBlob retries to reupload media to Snapchat.
-func (acc *Account) RetryBlob(username, AuthToken string, blobType int, encryptedBlob []byte, recipients []string, time int) string {
+// RetrySend retries to resend media to Snapchat users.
+func (acc *Account) RetrySend(mediaID string, path string, recipients []string, time int) (map[string]interface{}, error) {
 	ts := Timestamp()
 	var rp string
 	for i, v := range recipients {
 		if i > 0 {
-			rp += ","
+			rp += "\",\""
+		} else {
+			rp += "[\""
 		}
 		rp += v
+		if i == len(recipients)-1 {
+			rp += "\"]"
+		}
 	}
+	timeString := strconv.Itoa(time)
 	data := map[string]string{
-		"username":  username,
-		"timestamp": ts,
-		"req_token": RequestToken(AuthToken, ts),
-		"media_id":  MediaID(username),
-		"type":      string(blobType),
-		"data":      string(encryptedBlob),
-		"recipient": rp,
-		"time":      string(time),
+		"username":            acc.Username,
+		"timestamp":           ts,
+		"req_token":           RequestToken(acc.Token, ts),
+		"media_id":            mediaID,
+		"recipients":          string(rp),
+		"reply":               "0",
+		"time":                timeString,
+		"camera_front_facing": "0",
+		"zipped":              "0",
 	}
 
-	resp := acc.SendRequest("POST", "/bq/retry", data)
+	resp := acc.SendMultipartRequest("/loq/retry", data, path)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return nil, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
-	return resp.Status
+	if resp.StatusCode != 200 {
+		return nil, errors.New(resp.Status)
+	}
+	var parsed map[string]interface{}
+	json.Unmarshal(body, &parsed)
+	return parsed, nil
 }
 
 // PostStory posts media to a users Snapchat story.
