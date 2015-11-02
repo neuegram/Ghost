@@ -34,7 +34,7 @@ import (
 
 // Snapchat general constants.
 const (
-	SnapchatVersion   = "9.17.1.0"
+	SnapchatVersion   = "9.18.0.0"
 	URL               = "https://app.snapchat.com"
 	UserAgent         = "Snapchat/" + SnapchatVersion + " (HTC One; Android 5.0.2#482424.2#21; gzip)"
 	AcceptLang        = "en"
@@ -250,7 +250,7 @@ func EncryptECB(key, data []byte) []byte {
 func IsJPEG(data []byte) bool {
 	sig, err := hex.DecodeString(JPEGSignature)
 	if err != nil {
-		fmt.Println(err)
+		return false
 	}
 	if bytes.Equal(data[:len(sig)], sig) {
 		return true
@@ -262,7 +262,7 @@ func IsJPEG(data []byte) bool {
 func IsMP4(data []byte) bool {
 	sig, err := hex.DecodeString(MP4Signature)
 	if err != nil {
-		fmt.Println(err)
+		return false
 	}
 	if bytes.Equal(data[:len(sig)], sig) {
 		return true
@@ -326,6 +326,32 @@ func UUID4() string {
 // MediaID creates Snapchat Media UUIDs using username.
 func MediaID(username string) string {
 	return fmt.Sprintf("%s~%s", strings.ToUpper(username), UUID4())
+}
+
+// EncryptSnap is a small wrapper around AddPKCS5 & EncryptECB.
+func EncryptSnap(file []byte) ([]byte, error) {
+	if len(file) == 0 {
+		return nil, errors.New("File does not exist.")
+	}
+	padFile := AddPKCS5(file)
+	encryptedFile := EncryptECB([]byte(BlobEncryptionKey), padFile)
+	return encryptedFile, nil
+}
+
+// DetectMedia is a small wrapper around IsJPEG & IsMP4.
+func DetectMedia(file []byte) (string, error) {
+	var mt SnapchatMediaType
+	if len(file) == 0 {
+		return "", errors.New("File does not exist.")
+	}
+	if IsJPEG(file) == true {
+		mt = MediaImage
+	} else if IsMP4(file) == true {
+		mt = MediaVideo
+	} else {
+		return "", errors.New("Unknown file type.")
+	}
+	return strconv.Itoa(int(mt)), nil
 }
 
 // RequestToken generates request tokens on each Snapchat API request.
@@ -639,10 +665,6 @@ func (acc *Account) SendMultipartRequest(endpoint string, data map[string]string
 	if err != nil {
 		fmt.Println(err)
 	}
-	// Apparently Snapchat hates encryption???
-	// padf := AddPKCS5(file)
-	// encryptedFile := EncryptECB([]byte(BlobEncryptionKey), padf)
-	// encrBytes := bytes.NewBuffer(encryptedFile)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -1225,8 +1247,7 @@ func (acc *Account) DownloadFriendSnapTag(userID string, sfmt SnapTagImageFormat
 }
 
 // Upload sends media to Snapchat.
-func (acc *Account) Upload(path string) (string, error) { //map[string]interface{} {
-	var mt SnapchatMediaType
+func (acc *Account) Upload(path string) (string, error) {
 	ts := Timestamp()
 	id := MediaID(acc.Username)
 
@@ -1235,20 +1256,16 @@ func (acc *Account) Upload(path string) (string, error) { //map[string]interface
 		return "", errors.New("File does not exist.")
 	}
 
-	if IsJPEG(file) == true {
-		mt = MediaImage
-	} else if IsMP4(file) == true {
-		mt = MediaVideo
-	} else {
-		return "", errors.New("Unknown file type.")
+	mediaType, err := DetectMedia(file)
+	if err != nil {
+		return "", err
 	}
-	mediaTypeString := strconv.Itoa(int(mt))
 
 	data := map[string]string{
 		"media_id":  id,
 		"req_token": RequestToken(acc.Token, ts),
 		"timestamp": ts,
-		"type":      mediaTypeString,
+		"type":      mediaType,
 		"username":  acc.Username,
 		"zipped":    "0",
 	}
@@ -1348,30 +1365,98 @@ func (acc *Account) RetrySend(mediaID string, path string, recipients []string, 
 }
 
 // PostStory posts media to a users Snapchat story.
-func (acc *Account) PostStory(username, AuthToken, id string, blobType, time int) map[string]interface{} {
+func (acc *Account) PostStory(mediaID string, path string, caption string, time int) (map[string]interface{}, error) {
 	ts := Timestamp()
+
+	file, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, errors.New("File does not exist.")
+	}
+
+	mediaType, err := DetectMedia(file)
+	if err != nil {
+		return nil, err
+	}
+
+	if caption == "" {
+		caption = ""
+	}
+
 	data := map[string]string{
-		"username":             username,
+		"camera_front_facing":  "0",
+		"username":             acc.Username,
 		"timestamp":            ts,
-		"auth_token":           RequestToken(AuthToken, ts),
-		"media_id":             id,
-		"client_id":            id,
-		"caption_text_display": "",
-		"type":                 string(blobType),
+		"req_token":            RequestToken(acc.Token, ts),
+		"media_id":             mediaID,
+		"my_story":             "true",
+		"client_id":            mediaID,
+		"story_timestamp":      ts,
+		"shared_ids":           "{}",
+		"caption_text_display": caption,
+		"type":                 mediaType,
 		"time":                 string(time),
 	}
 
 	resp := acc.SendRequest("POST", "/bq/post_story", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return nil, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
+	if resp.StatusCode != 200 {
+		return nil, errors.New(resp.Status)
+	}
 	var parsed map[string]interface{}
 	json.Unmarshal(body, &parsed)
-	return parsed
+	return parsed, nil
+}
+
+// RetryPostStory retries to post media to a users Snapchat story.
+func (acc *Account) RetryPostStory(mediaID string, path string, caption string, time int) (map[string]interface{}, error) {
+	ts := Timestamp()
+
+	file, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, errors.New("File does not exist.")
+	}
+
+	mediaType, err := DetectMedia(file)
+	if err != nil {
+		return nil, err
+	}
+
+	if caption == "" {
+		caption = ""
+	}
+
+	timeString := strconv.Itoa(int(time))
+	data := map[string]string{
+		"username":             acc.Username,
+		"timestamp":            ts,
+		"req_token":            RequestToken(acc.Token, ts),
+		"media_id":             mediaID,
+		"client_id":            mediaID,
+		"caption_text_display": caption,
+		"type":                 mediaType,
+		"time":                 timeString,
+	}
+
+	resp := acc.SendMultipartRequest("/bq/retry_post_story", data, path)
+	body, ioErr := ioutil.ReadAll(resp.Body)
+	if ioErr != nil {
+		return nil, ioErr
+	}
+	if acc.Debug == true {
+		fmt.Println(string(body))
+	}
+	if resp.StatusCode != 200 {
+		return nil, errors.New(resp.Status)
+	}
+	var parsed map[string]interface{}
+	json.Unmarshal(body, &parsed)
+	return parsed, nil
 }
 
 // DeleteStory deletes media from a Snapchat story.
@@ -1397,35 +1482,6 @@ func (acc *Account) DeleteStory(username, AuthToken, id string) bool {
 	}
 
 	return true
-}
-
-// RetryPostStory retries to post media to a users Snapchat story.
-func (acc *Account) RetryPostStory(username, AuthToken string, blobType, time int, encryptedBlob []byte) map[string]interface{} {
-	ts := Timestamp()
-	id := MediaID(username)
-	data := map[string]string{
-		"username":             username,
-		"timestamp":            ts,
-		"req_token":            RequestToken(AuthToken, ts),
-		"media_id":             id,
-		"client_id":            id,
-		"caption_text_display": "",
-		"type":                 string(blobType),
-		"time":                 string(time),
-		"data":                 string(encryptedBlob),
-	}
-
-	resp := acc.SendRequest("POST", "/bq/retry_post_story", data)
-	body, ioErr := ioutil.ReadAll(resp.Body)
-	if ioErr != nil {
-		fmt.Println(ioErr)
-	}
-	if acc.Debug == true {
-		fmt.Println(string(body))
-	}
-	var parsed map[string]interface{}
-	json.Unmarshal(body, &parsed)
-	return parsed
 }
 
 // DoublePost posts a snap to a users Snapchat story and to other Snapchat users.
