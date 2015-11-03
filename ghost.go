@@ -1313,7 +1313,7 @@ func (acc *Account) Send(mediaID string, recipients []string, time int) (map[str
 		fmt.Println(string(body))
 	}
 	if resp.StatusCode != 200 {
-		return nil, errors.New(resp.Status)
+		return nil, errors.New("An error occured: HTTP Status: " + resp.Status)
 	}
 	var parsed map[string]interface{}
 	json.Unmarshal(body, &parsed)
@@ -1357,7 +1357,7 @@ func (acc *Account) RetrySend(mediaID string, path string, recipients []string, 
 		fmt.Println(string(body))
 	}
 	if resp.StatusCode != 200 {
-		return nil, errors.New(resp.Status)
+		return nil, errors.New("An error occured: HTTP Status: " + resp.Status)
 	}
 	var parsed map[string]interface{}
 	json.Unmarshal(body, &parsed)
@@ -1429,7 +1429,7 @@ func (acc *Account) PostStory(mediaID string, path string, caption string, time 
 		fmt.Println(string(body))
 	}
 	if resp.StatusCode != 200 {
-		return nil, errors.New(resp.Status)
+		return nil, errors.New("An error occured: HTTP Status: " + resp.Status)
 	}
 	var parsed map[string]interface{}
 	json.Unmarshal(body, &parsed)
@@ -1475,7 +1475,7 @@ func (acc *Account) RetryPostStory(mediaID string, path string, caption string, 
 		fmt.Println(string(body))
 	}
 	if resp.StatusCode != 200 {
-		return nil, errors.New(resp.Status)
+		return nil, errors.New("An error occured: HTTP Status: " + resp.Status)
 	}
 	var parsed map[string]interface{}
 	json.Unmarshal(body, &parsed)
@@ -1483,7 +1483,7 @@ func (acc *Account) RetryPostStory(mediaID string, path string, caption string, 
 }
 
 // DeleteStory deletes media from a Snapchat story.
-func (acc *Account) DeleteStory(id string) bool {
+func (acc *Account) DeleteStory(id string) (bool, error) {
 	ts := Timestamp()
 	data := map[string]string{
 		"username":  acc.Username,
@@ -1495,16 +1495,16 @@ func (acc *Account) DeleteStory(id string) bool {
 	resp := acc.SendRequest("POST", "/bq/delete_story", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return false, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
 	if resp.StatusCode != 204 {
-		return false
+		return false, errors.New("An error occured: HTTP Status: " + resp.Status)
 	}
 
-	return true
+	return true, nil
 }
 
 // DoublePost posts a snap to a users Snapchat story and to other Snapchat users.
@@ -1555,7 +1555,7 @@ func (acc *Account) DoublePost(mediaID string, path string, recipients []string,
 	resp := acc.SendRequest("POST", "/loq/double_post", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return StorySnap{}, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
@@ -1565,36 +1565,8 @@ func (acc *Account) DoublePost(mediaID string, path string, recipients []string,
 	return parsed, nil
 }
 
-// FindFriends finds friends using a phone number from contacts.
-func (acc *Account) FindFriends(username, AuthToken, countryCode string, contacts map[string]string) map[string]interface{} {
-	ts := Timestamp()
-	nums, err := json.Marshal(contacts)
-	if err != nil {
-		fmt.Println(err)
-	}
-	data := map[string]string{
-		"username":    username,
-		"timestamp":   ts,
-		"req_token":   RequestToken(AuthToken, ts),
-		"countryCode": countryCode,
-		"numbers":     string(nums),
-	}
-
-	resp := acc.SendRequest("POST", "/bq/find_friends", data)
-	body, ioErr := ioutil.ReadAll(resp.Body)
-	if ioErr != nil {
-		fmt.Println(ioErr)
-	}
-	if acc.Debug == true {
-		fmt.Println(string(body))
-	}
-	var parsed map[string]interface{}
-	json.Unmarshal(body, &parsed)
-	return parsed
-}
-
 // UserExists checks if a username exists in Snapchat.
-func (acc *Account) UserExists(requestUsername string) map[string]interface{} {
+func (acc *Account) UserExists(requestUsername string) (map[string]interface{}, error) {
 	ts := Timestamp()
 	data := map[string]string{
 		"username":         acc.Username,
@@ -1606,23 +1578,51 @@ func (acc *Account) UserExists(requestUsername string) map[string]interface{} {
 	resp := acc.SendRequest("POST", "/bq/user_exists", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return nil, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
 	var parsed map[string]interface{}
 	json.Unmarshal(body, &parsed)
-	return parsed
+	return parsed, nil
+}
+
+// FindFriends finds friends using a phone number from contacts.
+func (acc *Account) FindFriends(countryCode string, contacts map[string]string) (map[string]interface{}, error) {
+	ts := Timestamp()
+	nums, err := json.Marshal(contacts)
+	if err != nil {
+		fmt.Println(err)
+	}
+	data := map[string]string{
+		"username":    acc.Username,
+		"timestamp":   ts,
+		"req_token":   RequestToken(acc.Token, ts),
+		"countryCode": countryCode,
+		"numbers":     string(nums),
+	}
+
+	resp := acc.SendRequest("POST", "/bq/find_friends", data)
+	body, ioErr := ioutil.ReadAll(resp.Body)
+	if ioErr != nil {
+		return nil, ioErr
+	}
+	if acc.Debug == true {
+		fmt.Println(string(body))
+	}
+	var parsed map[string]interface{}
+	json.Unmarshal(body, &parsed)
+	return parsed, nil
 }
 
 // AddFriend adds a friend on Snapchat.
-func (acc *Account) AddFriend(username, AuthToken, friend string) map[string]interface{} {
+func (acc *Account) AddFriend(friend string) (Friend, error) {
 	ts := Timestamp()
 	data := map[string]string{
-		"username":  username,
+		"username":  acc.Username,
 		"timestamp": ts,
-		"req_token": RequestToken(AuthToken, ts),
+		"req_token": RequestToken(acc.Token, ts),
 		"action":    "add",
 		"friend":    friend,
 	}
@@ -1630,23 +1630,23 @@ func (acc *Account) AddFriend(username, AuthToken, friend string) map[string]int
 	resp := acc.SendRequest("POST", "/bq/friend", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return Friend{}, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
-	var parsed map[string]interface{}
+	var parsed Friend
 	json.Unmarshal(body, &parsed)
-	return parsed
+	return parsed, nil
 }
 
 // DeleteFriend deletes a friend on Snapchat.
-func (acc *Account) DeleteFriend(username, AuthToken, friend string) map[string]interface{} {
+func (acc *Account) DeleteFriend(friend string) (Friend, error) {
 	ts := Timestamp()
 	data := map[string]string{
-		"username":  username,
+		"username":  acc.Username,
 		"timestamp": ts,
-		"req_token": RequestToken(AuthToken, ts),
+		"req_token": RequestToken(acc.Token, ts),
 		"action":    "delete",
 		"friend":    friend,
 	}
@@ -1654,23 +1654,23 @@ func (acc *Account) DeleteFriend(username, AuthToken, friend string) map[string]
 	resp := acc.SendRequest("POST", "/bq/friend", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return Friend{}, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
-	var parsed map[string]interface{}
+	var parsed Friend
 	json.Unmarshal(body, &parsed)
-	return parsed
+	return parsed, nil
 }
 
 // BlockFriend blocks a friend on Snapchat.
-func (acc *Account) BlockFriend(username, AuthToken, friend string) map[string]interface{} {
+func (acc *Account) BlockFriend(friend string) (Friend, error) {
 	ts := Timestamp()
 	data := map[string]string{
-		"username":  username,
+		"username":  acc.Username,
 		"timestamp": ts,
-		"req_token": RequestToken(AuthToken, ts),
+		"req_token": RequestToken(acc.Token, ts),
 		"action":    "block",
 		"friend":    friend,
 	}
@@ -1678,23 +1678,23 @@ func (acc *Account) BlockFriend(username, AuthToken, friend string) map[string]i
 	resp := acc.SendRequest("POST", "/bq/friend", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return Friend{}, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
-	var parsed map[string]interface{}
+	var parsed Friend
 	json.Unmarshal(body, &parsed)
-	return parsed
+	return parsed, nil
 }
 
 // UnblockFriend unblocks a friend on Snapchat.
-func (acc *Account) UnblockFriend(username, AuthToken, friend string) map[string]interface{} {
+func (acc *Account) UnblockFriend(friend string) (Friend, error) {
 	ts := Timestamp()
 	data := map[string]string{
-		"username":  username,
+		"username":  acc.Username,
 		"timestamp": ts,
-		"req_token": RequestToken(AuthToken, ts),
+		"req_token": RequestToken(acc.Token, ts),
 		"action":    "unblock",
 		"friend":    friend,
 	}
@@ -1702,23 +1702,23 @@ func (acc *Account) UnblockFriend(username, AuthToken, friend string) map[string
 	resp := acc.SendRequest("POST", "/bq/friend", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return Friend{}, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
-	var parsed map[string]interface{}
+	var parsed Friend
 	json.Unmarshal(body, &parsed)
-	return parsed
+	return parsed, nil
 }
 
-// SetNickname sets a nickname a friend on Snapchat.
-func (acc *Account) SetNickname(username, AuthToken, friend, nickname string) map[string]interface{} {
+// SetNickname sets a nickname of a friend on Snapchat.
+func (acc *Account) SetNickname(friend, nickname string) (Friend, error) {
 	ts := Timestamp()
 	data := map[string]string{
-		"username":  username,
+		"username":  acc.Username,
 		"timestamp": ts,
-		"req_token": RequestToken(AuthToken, ts),
+		"req_token": RequestToken(acc.Token, ts),
 		"action":    "display",
 		"friend":    friend,
 		"display":   nickname,
@@ -1727,27 +1727,27 @@ func (acc *Account) SetNickname(username, AuthToken, friend, nickname string) ma
 	resp := acc.SendRequest("POST", "/bq/friend", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return Friend{}, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
-	var parsed map[string]interface{}
+	var parsed Friend
 	json.Unmarshal(body, &parsed)
-	return parsed
+	return parsed, nil
 }
 
-// BestFriends fetches best friends, scores and miscellania on Snapchat.
-func (acc *Account) BestFriends(username, AuthToken string, friends []string) map[string]interface{} {
+// BestFriends fetches best friends and scores on Snapchat.
+func (acc *Account) BestFriends(friends []string) map[string]interface{} {
 	ts := Timestamp()
 	users, err := json.Marshal(friends)
 	if err != nil {
 		fmt.Println(err)
 	}
 	data := map[string]string{
-		"username":         username,
+		"username":         acc.Username,
 		"timestamp":        ts,
-		"req_token":        RequestToken(AuthToken, ts),
+		"req_token":        RequestToken(acc.Token, ts),
 		"friend_usernames": string(users),
 	}
 

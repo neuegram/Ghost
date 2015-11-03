@@ -1091,6 +1091,26 @@ type LensSchedule struct {
 	} `json:"schedule"`
 }
 
+type Friend struct {
+	Message string `json:"message"`
+	Param   string `json:param`
+	Object  struct {
+		Name                string   `json:"name"`
+		UserID              string   `json:"user_id"`
+		Type                int      `json:"type"`
+		Display             string   `json:"display"`
+		Ts                  int      `json:"ts"`
+		Direction           string   `json:"direction"`
+		CanSeeCustomStories bool     `json:"can_see_custom_stories"`
+		Expiration          int      `json:"expiration"`
+		FriendmojiString    string   `json:"friendmoji_string"`
+		NeedsLove           bool     `json:"needs_love"`
+		FriendmojiSymbols   []string `json:"friendmoji_symbols"`
+		SnapStreakCount     int      `json:"snap_streak_count"`
+	} `json:"object"`
+	Logged bool `json:"logged"`
+}
+
 // SnapTag holds Snaptag data about a single Snaptag. Could be either a base64'd PNG or SVG image.
 type SnapTag struct {
 	Imagedata string `json:"imageData"`
