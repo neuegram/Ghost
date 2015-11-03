@@ -1364,6 +1364,29 @@ func (acc *Account) RetrySend(mediaID string, path string, recipients []string, 
 	return parsed, nil
 }
 
+// Stories fetches the current users Snapchat stories.
+// Useful if you only want the Snapchat stories.
+func (acc *Account) Stories() (Stories, error) {
+	ts := Timestamp()
+	data := map[string]string{
+		"timestamp": ts,
+		"req_token": RequestToken(acc.Token, ts),
+		"username":  acc.Username,
+	}
+
+	resp := acc.SendRequest("POST", "/bq/stories", data)
+	body, ioErr := ioutil.ReadAll(resp.Body)
+	if ioErr != nil {
+		return Stories{}, ioErr
+	}
+	if acc.Debug == true {
+		fmt.Println(string(body))
+	}
+	var parsed Stories
+	json.Unmarshal(body, &parsed)
+	return parsed, nil
+}
+
 // PostStory posts media to a users Snapchat story.
 func (acc *Account) PostStory(mediaID string, path string, caption string, time int) (map[string]interface{}, error) {
 	ts := Timestamp()
@@ -1460,12 +1483,12 @@ func (acc *Account) RetryPostStory(mediaID string, path string, caption string, 
 }
 
 // DeleteStory deletes media from a Snapchat story.
-func (acc *Account) DeleteStory(username, AuthToken, id string) bool {
+func (acc *Account) DeleteStory(id string) bool {
 	ts := Timestamp()
 	data := map[string]string{
-		"username":  username,
+		"username":  acc.Username,
 		"timestamp": ts,
-		"req_token": RequestToken(AuthToken, ts),
+		"req_token": RequestToken(acc.Token, ts),
 		"story_id":  id,
 	}
 
@@ -1477,7 +1500,7 @@ func (acc *Account) DeleteStory(username, AuthToken, id string) bool {
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != 204 {
 		return false
 	}
 
@@ -1485,28 +1508,51 @@ func (acc *Account) DeleteStory(username, AuthToken, id string) bool {
 }
 
 // DoublePost posts a snap to a users Snapchat story and to other Snapchat users.
-func (acc *Account) DoublePost(username, AuthToken, id string, recipients []string, blobType, time int) map[string]interface{} {
+func (acc *Account) DoublePost(mediaID string, path string, recipients []string, caption string, time int) (StorySnap, error) {
 	ts := Timestamp()
 	var rp string
 	for i, v := range recipients {
 		if i > 0 {
-			rp += ","
+			rp += "\",\""
+		} else {
+			rp += "[\""
 		}
 		rp += v
+		if i == len(recipients)-1 {
+			rp += "\"]"
+		}
 	}
+
+	file, err := ioutil.ReadFile(path)
+	if err != nil {
+		return StorySnap{}, errors.New("File does not exist.")
+	}
+
+	mediaType, err := DetectMedia(file)
+	if err != nil {
+		return StorySnap{}, err
+	}
+
+	if caption == "" {
+		caption = ""
+	}
+
 	data := map[string]string{
-		"username":             username,
+		"username":             acc.Username,
 		"timestamp":            ts,
-		"req_token":            RequestToken(AuthToken, ts),
-		"media_id":             id,
-		"client_id":            id,
-		"recipient":            rp,
-		"caption_text_display": "",
-		"type":                 string(blobType),
+		"req_token":            RequestToken(acc.Token, ts),
+		"media_id":             mediaID,
+		"my_story":             "true",
+		"client_id":            mediaID,
+		"recipients":           string(rp),
+		"shared_ids":           "{}",
+		"story_timestamp":      ts,
+		"caption_text_display": caption,
+		"type":                 mediaType,
 		"time":                 string(time),
 	}
 
-	resp := acc.SendRequest("POST", "/bq/double_post", data)
+	resp := acc.SendRequest("POST", "/loq/double_post", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
 		fmt.Println(ioErr)
@@ -1514,9 +1560,9 @@ func (acc *Account) DoublePost(username, AuthToken, id string, recipients []stri
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
-	var parsed map[string]interface{}
+	var parsed StorySnap
 	json.Unmarshal(body, &parsed)
-	return parsed
+	return parsed, nil
 }
 
 // FindFriends finds friends using a phone number from contacts.
@@ -1535,6 +1581,29 @@ func (acc *Account) FindFriends(username, AuthToken, countryCode string, contact
 	}
 
 	resp := acc.SendRequest("POST", "/bq/find_friends", data)
+	body, ioErr := ioutil.ReadAll(resp.Body)
+	if ioErr != nil {
+		fmt.Println(ioErr)
+	}
+	if acc.Debug == true {
+		fmt.Println(string(body))
+	}
+	var parsed map[string]interface{}
+	json.Unmarshal(body, &parsed)
+	return parsed
+}
+
+// UserExists checks if a username exists in Snapchat.
+func (acc *Account) UserExists(requestUsername string) map[string]interface{} {
+	ts := Timestamp()
+	data := map[string]string{
+		"username":         acc.Username,
+		"request_username": requestUsername,
+		"timestamp":        ts,
+		"req_token":        RequestToken(acc.Token, ts),
+	}
+
+	resp := acc.SendRequest("POST", "/bq/user_exists", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
 		fmt.Println(ioErr)

@@ -700,6 +700,159 @@ type Updates struct {
 	} `json:"sponsored"`
 }
 
+type StorySnap struct {
+	StoryResponse struct {
+		JSON struct {
+			Story struct {
+				ID                 string  `json:"id"`
+				Username           string  `json:"username"`
+				MatureContent      bool    `json:"mature_content"`
+				ClientID           string  `json:"client_id"`
+				Timestamp          int64   `json:"timestamp"`
+				MediaID            string  `json:"media_id"`
+				MediaKey           string  `json:"media_key"`
+				MediaIv            string  `json:"media_iv"`
+				ThumbnailIv        string  `json:"thumbnail_iv"`
+				MediaType          int     `json:"media_type"`
+				Time               float64 `json:"time"`
+				CaptionTextDisplay string  `json:"caption_text_display"`
+				Zipped             bool    `json:"zipped"`
+				IsShared           bool    `json:"is_shared"`
+				IsTitleSnap        bool    `json:"is_title_snap"`
+				NeedsAuth          bool    `json:"needs_auth"`
+				AdCanFollow        bool    `json:"ad_can_follow"`
+				Orientation        int     `json:"orientation"`
+				IsFrontFacing      bool    `json:"is_front_facing"`
+				TimeLeft           int     `json:"time_left"`
+				MediaURL           string  `json:"media_url"`
+				ThumbnailURL       string  `json:"thumbnail_url"`
+			} `json:"story"`
+		} `json:"json"`
+		Success bool `json:"success"`
+	} `json:"story_response"`
+	SnapResponse struct {
+		Snaps struct {
+			EfrenPrice095B struct {
+				ID        string `json:"id"`
+				Timestamp int64  `json:"timestamp"`
+				Pending   bool   `json:"pending"`
+			} `json:"efren.price095b"`
+		} `json:"snaps"`
+		Success bool `json:"success"`
+	} `json:"snap_response"`
+}
+
+type Stories struct {
+	ServerInfo struct {
+		ServerLatency string `json:"server_latency"`
+	} `json:"server_info"`
+	MyStoriesWithCollabs []interface{} `json:"my_stories_with_collabs"`
+	MatureContentText    struct {
+		Title   string `json:"title"`
+		Message string `json:"message"`
+		YesText string `json:"yes_text"`
+		NoText  string `json:"no_text"`
+	} `json:"mature_content_text"`
+	MyVerifiedStories []interface{} `json:"my_verified_stories"`
+	MyStories         []struct {
+		StoryNotes []interface{} `json:"story_notes"`
+		Story      struct {
+			ID                 string  `json:"id"`
+			Username           string  `json:"username"`
+			MatureContent      bool    `json:"mature_content"`
+			ClientID           string  `json:"client_id"`
+			Timestamp          int64   `json:"timestamp"`
+			MediaID            string  `json:"media_id"`
+			MediaKey           string  `json:"media_key"`
+			MediaIv            string  `json:"media_iv"`
+			ThumbnailIv        string  `json:"thumbnail_iv"`
+			MediaType          int     `json:"media_type"`
+			Time               float64 `json:"time"`
+			CaptionTextDisplay string  `json:"caption_text_display"`
+			Zipped             bool    `json:"zipped"`
+			StoryFilterID      string  `json:"story_filter_id"`
+			TimeLeft           int     `json:"time_left"`
+			IsShared           bool    `json:"is_shared"`
+			MediaURL           string  `json:"media_url"`
+			ThumbnailURL       string  `json:"thumbnail_url"`
+			NeedsAuth          bool    `json:"needs_auth"`
+			AdCanFollow        bool    `json:"ad_can_follow"`
+		} `json:"story"`
+		StoryExtras struct {
+			ViewCount       int `json:"view_count"`
+			ScreenshotCount int `json:"screenshot_count"`
+		} `json:"story_extras"`
+	} `json:"my_stories"`
+	FriendStoriesDelta bool `json:"friend_stories_delta"`
+	FriendStories      []struct {
+		AllowStoryExplorer bool   `json:"allow_story_explorer"`
+		DisplayName        string `json:"display_name"`
+		MatureContent      bool   `json:"mature_content"`
+		Username           string `json:"username"`
+		Stories            []struct {
+			Story struct {
+				ID                 string  `json:"id"`
+				Username           string  `json:"username"`
+				MatureContent      bool    `json:"mature_content"`
+				ClientID           string  `json:"client_id"`
+				Timestamp          int64   `json:"timestamp"`
+				MediaID            string  `json:"media_id"`
+				MediaKey           string  `json:"media_key"`
+				MediaIv            string  `json:"media_iv"`
+				ThumbnailIv        string  `json:"thumbnail_iv"`
+				MediaType          int     `json:"media_type"`
+				Time               float64 `json:"time"`
+				CaptionTextDisplay string  `json:"caption_text_display"`
+				Zipped             bool    `json:"zipped"`
+				StoryFilterID      string  `json:"story_filter_id"`
+				Unlockables        []struct {
+					UnlockableID   string `json:"unlockable_id"`
+					UnlockableType string `json:"unlockable_type"`
+				} `json:"unlockables"`
+				TimeLeft     int    `json:"time_left"`
+				IsShared     bool   `json:"is_shared"`
+				MediaURL     string `json:"media_url"`
+				ThumbnailURL string `json:"thumbnail_url"`
+				NeedsAuth    bool   `json:"needs_auth"`
+				AdCanFollow  bool   `json:"ad_can_follow"`
+			} `json:"story"`
+			Viewed bool `json:"viewed"`
+		} `json:"stories"`
+		AdPlacementMetadata struct {
+			AdInsertionConfig struct {
+				FirstOnResume   int `json:"first_on_resume"`
+				Interval        int `json:"interval"`
+				MinSnapsAfterAd int `json:"min_snaps_after_ad"`
+				FirstOnStart    int `json:"first_on_start"`
+			} `json:"ad_insertion_config"`
+			AdRequestConfig struct {
+				FirstPosition    int `json:"first_position"`
+				MinimumRemaining int `json:"minimum_remaining"`
+				Timeout          int `json:"timeout"`
+			} `json:"ad_request_config"`
+			TargetingParameters struct {
+				Genre       string `json:"genre"`
+				ChannelType string `json:"channel_type"`
+			} `json:"targeting_parameters"`
+			AdUnitID string `json:"ad_unit_id"`
+		} `json:"ad_placement_metadata"`
+		SharedID             string `json:"shared_id"`
+		HasCustomDescription bool   `json:"has_custom_description"`
+		Thumbnails           struct {
+			Unviewed struct {
+				NeedsAuth bool   `json:"needs_auth"`
+				URL       string `json:"url"`
+			} `json:"unviewed"`
+			Viewed struct {
+				NeedsAuth bool   `json:"needs_auth"`
+				URL       string `json:"url"`
+			} `json:"viewed"`
+		} `json:"thumbnails"`
+		IsLocal bool `json:"is_local"`
+	} `json:"friend_stories"`
+	MyGroupStories []interface{} `json:"my_group_stories"`
+}
+
 // LensSchedule holds a struct coresponding to the Snapchat Lens feature.
 type LensSchedule struct {
 	Schedule struct {

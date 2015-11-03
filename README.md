@@ -30,8 +30,6 @@ There is a Go library of the API [here](https://github.com/hako/casper)
 
 Run `go get github.com/hako/casper` then enter your API keys and you can start using this library.
 
-Not everything has been tested since but the basics still work. But feel free to contribute, this library is actively maintained. :)
-
 You can take a look at the documentation [here](https://github.com/mgp25/SC-API/wiki/API-v2-Research) and [here](https://github.com/cuonic/SnapchatDevWiki/wiki).
 
 #### Snapchat Registration CLI
@@ -40,6 +38,12 @@ You can register a Snapchat account through the CLI.
 Run `$ go get github.com/hako/ghost/srcli`
 
 Run `$ srcli -help` for more details.
+
+### Warning
+
+**This library is in alpha** at the moment, not everything has been tested (yet) but the basics still work. Feel free to contribute, this library is actively maintained and is making fast progress! :)
+
+But use at your own risk.
 
 ### Special Thanks
 
