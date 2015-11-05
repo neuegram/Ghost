@@ -34,7 +34,7 @@ import (
 
 // Snapchat general constants.
 const (
-	SnapchatVersion   = "9.18.0.0"
+	SnapchatVersion   = "9.18.2.0"
 	URL               = "https://app.snapchat.com"
 	UserAgent         = "Snapchat/" + SnapchatVersion + " (HTC One; Android 5.0.2#482424.2#21; gzip)"
 	AcceptLang        = "en"
