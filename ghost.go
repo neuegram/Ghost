@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/aes"
+	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
@@ -45,6 +46,7 @@ const (
 	BlobEncryptionKey = "M02cnQ51Ji97vwT4"
 	JPEGSignature     = "FFD8FFE0"
 	MP4Signature      = "000000186674797033677035"
+	ZipSignature      = "504B0304"
 )
 
 // Snapchat media constants.
@@ -242,11 +244,38 @@ func EncryptECB(key, data []byte) []byte {
 	return encrypted
 }
 
-// // DecryptCBC decrypts data using CBC.
-// func DecryptCBC(key, iv string) {
-// }
+// DecryptCBC decrypts data using CBC.
+func DecryptCBC(data []byte, b64Iv, b64Key string) []byte {
 
-// IsJPEG checks if data is a JPEG Image.
+	key, err := base64.StdEncoding.DecodeString(b64Key)
+	if err != nil {
+		fmt.Println(err)
+	}
+	iv, err := base64.StdEncoding.DecodeString(b64Iv)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	if len(data) < aes.BlockSize {
+		fmt.Println("Ciphertext is too short")
+	}
+
+	if len(data)%aes.BlockSize != 0 {
+		fmt.Println("Ciphertext is not a multiple of the block size")
+	}
+
+	decryptor := cipher.NewCBCDecrypter(block, iv)
+	decryptor.CryptBlocks(data, data)
+
+	return data
+}
+
+// IsJPEG checks if data is a JPEG image.
 func IsJPEG(data []byte) bool {
 	sig, err := hex.DecodeString(JPEGSignature)
 	if err != nil {
@@ -258,9 +287,21 @@ func IsJPEG(data []byte) bool {
 	return false
 }
 
-// IsMP4 checks if data is an MP4 Video.
+// IsMP4 checks if data is a MP4 video.
 func IsMP4(data []byte) bool {
 	sig, err := hex.DecodeString(MP4Signature)
+	if err != nil {
+		return false
+	}
+	if bytes.Equal(data[:len(sig)], sig) {
+		return true
+	}
+	return false
+}
+
+// IsZIP checks if data is a ZIP file.
+func IsZIP(data []byte) bool {
+	sig, err := hex.DecodeString(ZipSignature)
 	if err != nil {
 		return false
 	}
@@ -346,7 +387,7 @@ func DetectMedia(file []byte) (string, error) {
 	}
 	if IsJPEG(file) == true {
 		mt = MediaImage
-	} else if IsMP4(file) == true {
+	} else if IsMP4(file) == true || IsZIP(file) == true {
 		mt = MediaVideo
 	} else {
 		return "", errors.New("Unknown file type.")
@@ -555,6 +596,8 @@ func (acc *Account) AuthToken() string {
 // SendRequest performs HTTP requests.
 func (acc *Account) SendRequest(method, endpoint string, data map[string]string) *http.Response {
 	var tr *http.Transport
+	var req *http.Request
+	var form url.Values
 
 	tr = &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -568,41 +611,52 @@ func (acc *Account) SendRequest(method, endpoint string, data map[string]string)
 		fmt.Printf(method+"\t%s\n", URL+endpoint)
 	}
 
-	form := url.Values{}
-	for k, v := range data {
-		form.Add(k, v)
-		if acc.Debug == true {
-			fmt.Printf("%s\t%s\n", k, v)
+	if data != nil {
+
+		form = url.Values{}
+		for k, v := range data {
+			form.Add(k, v)
+			if acc.Debug == true {
+				fmt.Printf("%s\t%s\n", k, v)
+			}
 		}
 	}
 
 	client := &http.Client{Transport: tr}
 
-	req, err := http.NewRequest(method, URL+endpoint, strings.NewReader(form.Encode()))
+	if method == "GET" {
+		req, _ = http.NewRequest(method, URL+endpoint, nil)
+	} else {
+		req, _ = http.NewRequest(method, URL+endpoint, strings.NewReader(form.Encode()))
+	}
 
 	req.Header.Set("User-Agent", UserAgent)
 
-	if endpoint == "/bq/solve_captcha" {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	} else {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	}
+	if method == "POST" {
 
-	androidAuthToken := acc.AuthToken()
-
-	if endpoint == "/loq/login" || endpoint == "/loq/device_id" || endpoint == "/bq/solve_captcha" {
-		clientAuthToken, err := acc.CasperClient.GetClientAuthToken(acc.Username, acc.Password, data["timestamp"])
-		if err != nil {
-			fmt.Println(err)
+		if endpoint == "/bq/solve_captcha" {
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		} else {
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		}
-		req.Header.Set("X-Snapchat-Client-Auth-Token", "Bearer "+androidAuthToken)
-		req.Header.Set("X-Snapchat-Client-Auth", clientAuthToken)
-	} else {
-		req.Header.Set("X-Snapchat-Client-Auth-Token", "Bearer "+androidAuthToken)
+
+		androidAuthToken := acc.AuthToken()
+
+		if endpoint == "/loq/login" || endpoint == "/loq/device_id" || endpoint == "/bq/solve_captcha" {
+			clientAuthToken, err := acc.CasperClient.GetClientAuthToken(acc.Username, acc.Password, data["timestamp"])
+			if err != nil {
+				fmt.Println(err)
+			}
+			req.Header.Set("X-Snapchat-Client-Auth-Token", "Bearer "+androidAuthToken)
+			req.Header.Set("X-Snapchat-Client-Auth", clientAuthToken)
+		} else {
+			req.Header.Set("X-Snapchat-Client-Auth-Token", "Bearer "+androidAuthToken)
+		}
 	}
 
 	req.Header.Set("Accept-Language", AcceptLang)
 	req.Header.Set("Accept-Locale", AcceptLocale)
+
 	resp, err := client.Do(req)
 
 	if err != nil {
@@ -1034,7 +1088,7 @@ func (acc *Account) Logout() bool {
 	return true
 }
 
-// FetchBlob fetches the media blob. (Yet to test.)
+// FetchBlob fetches a single media blob.
 func (acc *Account) FetchBlob(username, id string) []byte {
 	ts := Timestamp()
 	data := map[string]string{
@@ -1054,6 +1108,31 @@ func (acc *Account) FetchBlob(username, id string) []byte {
 	}
 
 	return body
+}
+
+// FetchStoryBlob fetches and decrypts a story media blob.
+func (acc *Account) FetchStoryBlob(mediaID, b64Iv, b64Key string) error {
+	resp := acc.SendRequest("GET", "/bq/story_blob?story_id="+mediaID+"&t=0&mt=1&encoding=compressed", nil)
+	body, ioErr := ioutil.ReadAll(resp.Body)
+	if ioErr != nil {
+		return ioErr
+	}
+	if acc.Debug == true {
+		fmt.Println("< BLOB: " + mediaID + " >")
+	}
+	data := DecryptCBC(body, b64Iv, b64Key)
+	media, err := DetectMedia(data)
+	mediaType, err := strconv.Atoi(media)
+	if err != nil {
+		return err
+	}
+
+	if SnapchatMediaType(mediaType) == MediaVideo {
+		ioutil.WriteFile(mediaID+".zip", data, 0644)
+	} else {
+		ioutil.WriteFile(mediaID+".jpg", data, 0644)
+	}
+	return nil
 }
 
 // IPRouting gets IP Routing URLs.
@@ -1081,7 +1160,7 @@ func (acc *Account) IPRouting() map[string]interface{} {
 }
 
 // Updates gets all the Snapchat updates for the authenticated account.
-func (acc *Account) Updates() Updates {
+func (acc *Account) Updates() (Updates, error) {
 	ts := Timestamp()
 	data := map[string]string{
 		"checksums_dict":   "{}",
@@ -1097,14 +1176,14 @@ func (acc *Account) Updates() Updates {
 	resp := acc.SendRequest("POST", "/loq/all_updates", data)
 	body, ioErr := ioutil.ReadAll(resp.Body)
 	if ioErr != nil {
-		fmt.Println(ioErr)
+		return Updates{}, ioErr
 	}
 	if acc.Debug == true {
 		fmt.Println(string(body))
 	}
 	var parsed Updates
 	json.Unmarshal(body, &parsed)
-	return parsed
+	return parsed, nil
 }
 
 // SuggestedFriends fetches all the Snapchat suggested friends.
