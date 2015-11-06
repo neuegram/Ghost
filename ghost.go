@@ -351,7 +351,7 @@ func AddMP4Signature(data []byte) []byte {
 
 // Timestamp generates timestamps in miliseconds.
 func Timestamp() string {
-	return strconv.Itoa(int(time.Now().UnixNano() / 1000000))
+	return strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
 }
 
 // UUID4 Generates (RFC 4122) compatible UUIDs.
