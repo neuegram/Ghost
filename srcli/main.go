@@ -244,7 +244,10 @@ func main() {
 
 			var regChoice string
 			for {
-				decision, _ := rl.Readline()
+				decision, err := rl.Readline()
+				if err != nil {
+					fmt.Println(err)
+				}
 				checkChoice, err := checkYesNo(decision)
 				if err != nil {
 					fmt.Println(err)
@@ -407,18 +410,30 @@ func manualSetup(opts map[string]interface{}) (string, error) {
 
 	// Enter your desired username.
 	rl.SetPrompt("Enter your desired Snapchat username: ")
-	username, _ := rl.Readline()
+	username, err := rl.Readline()
+	if err != nil {
+		return "", err
+	}
 
 	// Enter your desired password.
-	password, _ := enterPassword("Enter your desired Snapchat password: ")
+	password, err := enterPassword("Enter your desired Snapchat password: ")
+	if err != nil {
+		return "", err
+	}
 
 	// Enter your email address.
 	rl.SetPrompt("Enter your email address: ")
-	email, _ := rl.Readline()
+	email, err := rl.Readline()
+	if err != nil {
+		return "", err
+	}
 
 	// Enter your birthday.
 	rl.SetPrompt("Enter your birthday (YYYY-MM-DD): ")
-	birthday, _ := rl.Readline()
+	birthday, err := rl.Readline()
+	if err != nil {
+		return "", err
+	}
 
 	age, err := ghost.CalculateAge(birthday)
 	if err != nil {
@@ -427,18 +442,30 @@ func manualSetup(opts map[string]interface{}) (string, error) {
 
 	// Enter your Gmail address.
 	rl.SetPrompt("Enter your Gmail address: ")
-	gmail, _ := rl.Readline()
+	gmail, err := rl.Readline()
+	if err != nil {
+		return "", err
+	}
 
 	// Enter your Gmail password.
-	gmailPassword, _ := enterPassword("Enter your Gmail password: ")
+	gmailPassword, err := enterPassword("Enter your Gmail password: ")
+	if err != nil {
+		return "", err
+	}
 
 	// Enter your Casper API Key.
 	rl.SetPrompt("Enter your Casper API Key: ")
-	casperAPIKey, _ := rl.Readline()
+	casperAPIKey, err := rl.Readline()
+	if err != nil {
+		return "", err
+	}
 
 	// Enter your Casper API Secret.
 	rl.SetPrompt("Enter your Casper API Secret: ")
-	casperAPISecret, _ := rl.Readline()
+	casperAPISecret, err := rl.Readline()
+	if err != nil {
+		return "", err
+	}
 
 	// Unchecked setup map.
 	uncheckedMap = map[string]string{
@@ -463,7 +490,10 @@ func manualSetup(opts map[string]interface{}) (string, error) {
 	rl.SetPrompt("Registration file will be saved as " + checkedMap["username"] + ".json. Continue? [ Y / N ] ")
 	var choice string
 	for {
-		decision, _ := rl.Readline()
+		decision, err := rl.Readline()
+		if err != nil {
+			return "", err
+		}
 		checkChoice, err := checkYesNo(decision)
 		if err != nil {
 			fmt.Println(err)
