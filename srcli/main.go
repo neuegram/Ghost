@@ -12,7 +12,7 @@ import (
 	"github.com/docopt/docopt-go"
 	"github.com/enodata/faker"
 	"github.com/hako/casper"
-	"github.com/hako/ghost"
+	"github.com/neuegram/ghost"
 	"gopkg.in/readline.v1"
 )
 

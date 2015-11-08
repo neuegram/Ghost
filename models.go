@@ -700,6 +700,7 @@ type Updates struct {
 	} `json:"sponsored"`
 }
 
+// StorySnap holds a single snap in a collection of stories.
 type StorySnap struct {
 	StoryResponse struct {
 		JSON struct {
@@ -742,6 +743,7 @@ type StorySnap struct {
 	} `json:"snap_response"`
 }
 
+// Stories holds an entire 24 hour Snapchat story from the user's account.
 type Stories struct {
 	ServerInfo struct {
 		ServerLatency string `json:"server_latency"`
@@ -1091,6 +1093,7 @@ type LensSchedule struct {
 	} `json:"schedule"`
 }
 
+// Friend holds data about a Snapchat friend action.
 type Friend struct {
 	Message string `json:"message"`
 	Param   string `json:param`

@@ -1,49 +1,76 @@
 # ghost
 A Go library for Snapchat's API
 
-### Sending a Snap example
-```go
- casperClient := &casper.Casper{
-    APIKey:    "yourapikey",
-    APISecret: "yourapisecret",
-    Username:  "yoursnapchatusername",
-    Password:  "yoursnapchatpassword",
-    Debug:     false,
-}
-snapchat := ghost.NewAccount("yourgmailaccount@gmail.com", "yourgmailpassword", casperClient, false)
-err := snapchat.Login()
-if err != nil {
-	fmt.Println(err)
-}
-snapchat.Updates()
-mediaID, _ := snapchat.Upload("yoursnap.jpg")
-result, _ := snapchat.Send(mediaID, []string{"teamsnapchat"}, 10)
-fmt.Println(result)
-```
 #### Installation
-`$ go get github.com/hako/ghost`
+`$ go get github.com/neuegram/ghost`
 
-#### Update
-This library has been updated to keep up with Snapchat's changes. To use this library you need to install the Casper API. 
+This library has been updated to keep up with Snapchat's changes. To use this library you need to signup to use the Casper API.
 
-There is a Go library of the API [here](https://github.com/hako/casper)
-
-Run `go get github.com/hako/casper` then enter your API keys and you can start using this library.
-
-You can take a look at the documentation [here](https://github.com/mgp25/SC-API/wiki/API-v2-Research) and [here](https://github.com/cuonic/SnapchatDevWiki/wiki).
-
-#### Snapchat Registration CLI
-You can register a Snapchat account through the CLI.
-
-Run `$ go get github.com/hako/ghost/srcli`
-
-Run `$ srcli -help` for more details.
+[Register a casper account](https://clients.casper.io/register.php), and you can start using this library.
 
 ### Warning
 
 **This library is in alpha** at the moment, not everything has been tested (yet) but the basics still work. Feel free to contribute, this library is actively maintained and is making fast progress! :)
 
-But use at your own risk.
+**Use at your own risk.**
+
+### Examples
+
+### Fetch all updates
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/neuegram/ghost"
+)
+
+func main() {
+	casperClient := ghost.NewRawCasperClient("yourapikey","yourapisecret")
+	casperClient.Username = "yoursnapchatusername"
+	casperClient.Password = "yoursnapchatpassword"
+	casperClient.Debug = false
+	snapchat := ghost.NewAccount("yourgmailaccount@gmail.com", "yourgmailpassword", casperClient, false)
+	err := snapchat.Login()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(snapchat.Updates())
+}
+
+```
+
+### Sending a Snap
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/neuegram/ghost"
+)
+
+func main() {
+	casperClient := ghost.NewRawCasperClient("yourapikey","yourapisecret")
+	casperClient.Username = "yoursnapchatusername"
+	casperClient.Password = "yoursnapchatpassword"
+	casperClient.Debug = false
+	snapchat := ghost.NewAccount("yourgmailaccount@gmail.com", "yourgmailpassword", casperClient, false)
+	err := snapchat.Login()
+	mediaID, err := snapchat.Upload("yoursnap.jpg")
+	result, err := snapchat.Send(mediaID, []string{"teamsnapchat"}, 10)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(result)
+}
+```
+
+#### Snapchat Registration CLI
+You can register a Snapchat account through the CLI.
+
+Run `$ go get github.com/neuegram/ghost/srcli`
+
+Run `$ srcli -help` for more details.
 
 ### Special Thanks
 
@@ -53,6 +80,8 @@ But use at your own risk.
 - [hako](https://github.com/hako)
 - [liamcottle](https://github.com/liamcottle) (creator of [Casper](https://casper.io/))
 - [kyleboyer](https://github.com/kyleboyer)
+
+If you would like to contribute, you can take a look at the documentation [here](https://github.com/mgp25/SC-API/wiki/API-v2-Research) and [here](https://github.com/cuonic/SnapchatDevWiki/wiki).
 
 ### Extra Special Thanks :poop:
 To whoever at Snapchat came up with this header:
