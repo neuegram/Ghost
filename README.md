@@ -1,24 +1,89 @@
-# Ghost
+# ghost
 A Go library for Snapchat's API
 
-### Example
+#### Installation
+`$ go get github.com/neuegram/ghost`
+
+This library has been updated to keep up with Snapchat's changes. To use this library you need to signup to use the Casper API.
+
+[Register a casper account](https://clients.casper.io/register.php), and you can start using this library.
+
+### Warning
+
+**This library is in alpha** at the moment, not everything has been tested (yet) but the basics still work. Feel free to contribute, this library is actively maintained and is making fast progress! :)
+
+**Use at your own risk.**
+
+### Examples
+
+### Fetch all updates
 ```go
-// Login
-loginResult := Login("myUsername", "myPassword")
-authToken = loginResult["auth_token"].(string)
-// Encrypt
-file, _ := ioutil.ReadFile("filePathIn.jpg")
-encryptedFile := EncryptECB([]byte(BLOB_ENCRYPTION_KEY), file)
-ioutil.WriteFile("filePathOut.jpg", encryptedFile, 0644)
-// Upload
-id := Upload("myUsername", authToken, IMAGE, "ImageECB.jpg")
-SendBlob("myUsername", authToken, id, []string{"recipientUsername"}, 10)
+package main
+
+import (
+	"fmt"
+	"github.com/neuegram/ghost"
+)
+
+func main() {
+	casperClient := ghost.NewRawCasperClient("yourapikey","yourapisecret")
+	casperClient.Username = "yoursnapchatusername"
+	casperClient.Password = "yoursnapchatpassword"
+	casperClient.Debug = false
+	snapchat := ghost.NewAccount("yourgmailaccount@gmail.com", "yourgmailpassword", casperClient, false)
+	err := snapchat.Login()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(snapchat.Updates())
+}
+
 ```
 
-### Status
-Because some parts have needed more work than others, I have yet to test about half of the code. I haven't had enough time to go through all of Snapchat's API changes since I last documented it. If something doesn't work, opening an issue (and email me if you feel the need). More coming, including additions to my Snapchat API [documentation](https://github.com/neuegram/SnAPI) (it needs a lot of updating :grimacing:).
+### Sending a Snap
+```go
+package main
 
-### Special Thanks :poop:
+import (
+	"fmt"
+	"github.com/neuegram/ghost"
+)
+
+func main() {
+	casperClient := ghost.NewRawCasperClient("yourapikey","yourapisecret")
+	casperClient.Username = "yoursnapchatusername"
+	casperClient.Password = "yoursnapchatpassword"
+	casperClient.Debug = false
+	snapchat := ghost.NewAccount("yourgmailaccount@gmail.com", "yourgmailpassword", casperClient, false)
+	err := snapchat.Login()
+	mediaID, err := snapchat.Upload("yoursnap.jpg")
+	result, err := snapchat.Send(mediaID, []string{"teamsnapchat"}, 10)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(result)
+}
+```
+
+#### Snapchat Registration CLI
+You can register a Snapchat account through the CLI.
+
+Run `$ go get github.com/neuegram/ghost/srcli`
+
+Run `$ srcli -help` for more details.
+
+### Special Thanks
+
+- [mgp25](https://github.com/hako/SC-API)
+- [neuegram](https://github.com/neuegram)
+- [teknogeek](https://github.com/teknogeek)
+- [hako](https://github.com/hako)
+- [liamcottle](https://github.com/liamcottle) (creator of [Casper](https://casper.io/))
+- [kyleboyer](https://github.com/kyleboyer)
+
+If you would like to contribute, you can take a look at the documentation [here](https://github.com/mgp25/SC-API/wiki/API-v2-Research) and [here](https://github.com/cuonic/SnapchatDevWiki/wiki).
+
+### Extra Special Thanks :poop:
 To whoever at Snapchat came up with this header:
 > “X-Snapchat-Notice: Snapchat Private APIs - Unauthorized use is prohibited.”
 
