@@ -47,13 +47,14 @@ Commands:
   teehee      Just...
 
 Options:
-  -h --help        Show this screen.
+  -a --about       About this program.
   -d --debug       Debug output. (Requires proxy server)
-  -f <FILE> 	   A registration file .json
+  -f <FILE> 	   A registration file (.json)
+  -h --help        Show this screen.
   -p <PROXY>       Proxy URL.
 
+  --captcha        Use captcha verification. (default)
   --phone <number> Use phone verification.
-  --captcha        Use captcha verification. (Default)
   --version        Show version.
  `
 
@@ -112,7 +113,7 @@ func main() {
 		proxy = ""
 	}
 
-	if opts["about"] == true {
+	if opts["about"] == true || opts["--about"] == true || opts["-a"] == true {
 		fmt.Println("Snapchat Registration CLI " + version + " by Wesley Hill (@hako/@hakobyte)")
 		return
 	}
@@ -267,7 +268,7 @@ func main() {
 			}
 
 		} else {
-			fmt.Println("Aborted.")
+			fmt.Println("Cancelled.")
 			os.Exit(0)
 		}
 	}
@@ -412,27 +413,27 @@ func manualSetup(opts map[string]interface{}) (string, error) {
 	rl.SetPrompt("Enter your desired Snapchat username: ")
 	username, err := rl.Readline()
 	if err != nil {
-		return "", err
+		return "", errors.New("Cancelled.")
 	}
 
 	// Enter your desired password.
 	password, err := enterPassword("Enter your desired Snapchat password: ")
 	if err != nil {
-		return "", err
+		return "", errors.New("Cancelled.")
 	}
 
 	// Enter your email address.
 	rl.SetPrompt("Enter your email address: ")
 	email, err := rl.Readline()
 	if err != nil {
-		return "", err
+		return "", errors.New("Cancelled.")
 	}
 
 	// Enter your birthday.
 	rl.SetPrompt("Enter your birthday (YYYY-MM-DD): ")
 	birthday, err := rl.Readline()
 	if err != nil {
-		return "", err
+		return "", errors.New("Cancelled.")
 	}
 
 	age, err := ghost.CalculateAge(birthday)
@@ -444,27 +445,27 @@ func manualSetup(opts map[string]interface{}) (string, error) {
 	rl.SetPrompt("Enter your Gmail address: ")
 	gmail, err := rl.Readline()
 	if err != nil {
-		return "", err
+		return "", errors.New("Cancelled.")
 	}
 
 	// Enter your Gmail password.
 	gmailPassword, err := enterPassword("Enter your Gmail password: ")
 	if err != nil {
-		return "", err
+		return "", errors.New("Cancelled.")
 	}
 
 	// Enter your Casper API Key.
 	rl.SetPrompt("Enter your Casper API Key: ")
 	casperAPIKey, err := rl.Readline()
 	if err != nil {
-		return "", err
+		return "", errors.New("Cancelled.")
 	}
 
 	// Enter your Casper API Secret.
 	rl.SetPrompt("Enter your Casper API Secret: ")
 	casperAPISecret, err := rl.Readline()
 	if err != nil {
-		return "", err
+		return "", errors.New("Cancelled.")
 	}
 
 	// Unchecked setup map.
@@ -546,7 +547,7 @@ func checkKeys(keyMap map[string]string) (map[string]string, error) {
 // checkYesNo checks if the user typed yes or no from a string.
 // It returns a standard Y/N if a similar string exists in an array.
 func checkYesNo(choice string) (string, error) {
-	var exists bool = false
+	var exists = false
 
 	// Check for Yeses.
 	for _, c := range []string{"Y", "y", "Yes", "YES", "yes"} {

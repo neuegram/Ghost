@@ -1096,7 +1096,7 @@ type LensSchedule struct {
 // Friend holds data about a Snapchat friend action.
 type Friend struct {
 	Message string `json:"message"`
-	Param   string `json:param`
+	Param   string `json:"param"`
 	Object  struct {
 		Name                string   `json:"name"`
 		UserID              string   `json:"user_id"`
