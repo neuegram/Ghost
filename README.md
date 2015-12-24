@@ -74,7 +74,7 @@ Run `$ srcli -help` for more details.
 
 ### Special Thanks
 
-- [mgp25](https://github.com/hako/SC-API)
+- [mgp25](https://github.com/mgp25)
 - [neuegram](https://github.com/neuegram)
 - [teknogeek](https://github.com/teknogeek)
 - [hako](https://github.com/hako)
